@@ -32,8 +32,8 @@ git commit -m "Initial commit: Photo Transfer System v1.0"
 ### 3. **Lier et Pousser vers GitHub**
 
 ```bash
-# Lier au repository GitHub (remplacez VOTRE_USERNAME)
-git remote add origin https://github.com/VOTRE_USERNAME/photo-transfer-system.git
+# Lier au repository GitHub
+git remote add origin https://github.com/JULIEN-85/Projet_FTP.git
 
 # Pousser vers GitHub
 git branch -M main
