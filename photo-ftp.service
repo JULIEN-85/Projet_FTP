@@ -1,0 +1,41 @@
+[Unit]
+Description=Photo Transfer Service - Energy Optimized
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+WorkingDirectory=/home/pi/photo-ftp
+ExecStart=/usr/bin/python3 /home/pi/photo-ftp/main.py
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+# Optimisations énergétiques
+Nice=10
+IOSchedulingClass=3
+CPUSchedulingPolicy=0
+
+# Limites de ressources
+LimitNOFILE=1024
+LimitNPROC=512
+MemoryMax=256M
+TasksMax=32
+
+# Variables d'environnement
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONOPTIMIZE=1
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+
+# Sécurité
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/home/pi/photo-ftp
+
+[Install]
+WantedBy=multi-user.target

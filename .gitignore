@@ -1,0 +1,89 @@
+# Logs
+logs/
+*.log
+
+# Fichiers de configuration avec mots de passe
+config.json
+config_phone.json
+
+# Dossiers de photos temporaires
+photos/
+phone_photos/
+simulation_photos/
+temp_photos/
+phone_test_photos/
+
+# Environnement virtuel Python
+venv/
+env/
+.venv/
+.env
+
+# Fichiers Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Fichiers de sauvegarde
+*.backup
+*.bak
+backup_*/
+
+# Fichiers temporaires
+*.tmp
+*.temp
+
+# Certificats et clés (sécurité)
+*.pem
+*.key
+*.crt
+*.p12
+
+# Base de données locale
+*.db
+*.sqlite
+*.sqlite3
+
+# Configuration locale
+local_config.json
+.local/
+
+# Fichiers de test
+test_config.json
+test_*.jpg
+test_*.jpeg
+test_*.png
