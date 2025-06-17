@@ -1,0 +1,31 @@
+# Configuration optimisée pour Raspberry Pi 5
+# /boot/firmware/config.txt
+
+# GPU et mémoire
+gpu_mem=128
+gpu_mem_256=128
+gpu_mem_512=128
+gpu_mem_1024=128
+
+# Optimisations Pi 5
+arm_64bit=1
+arm_boost=1
+
+# USB et performances
+dwc_otg.speed=1
+dwc_otg.lpm_enable=0
+
+# Overclocking léger (optionnel)
+over_voltage=2
+arm_freq=2600
+gpu_freq=750
+
+# Gestion thermique
+temp_limit=80
+
+# USB pour appareils photo
+max_usb_current=1
+
+# Réseau optimisé
+dtparam=eth_led0=4
+dtparam=eth_led1=4

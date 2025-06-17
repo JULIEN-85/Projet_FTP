@@ -1,0 +1,316 @@
+{% extends "base.html" %}
+
+{% block title %}Configuration - Photo Transfer System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="bi bi-gear"></i> Configuration du Système
+        </h1>
+    </div>
+</div>
+
+<form method="POST" action="{{ url_for('save_config_route') }}">
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-cloud-upload"></i> Configuration FTP
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="ftp_server" class="form-label">Serveur FTP *</label>
+                        <input type="text" class="form-control" id="ftp_server" name="ftp_server" 
+                               value="{{ config.ftp.server }}" placeholder="ftp.example.com" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="ftp_port" class="form-label">Port</label>
+                        <input type="number" class="form-control" id="ftp_port" name="ftp_port" 
+                               value="{{ config.ftp.port }}" min="1" max="65535">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="ftp_username" class="form-label">Nom d'utilisateur *</label>
+                        <input type="text" class="form-control" id="ftp_username" name="ftp_username" 
+                               value="{{ config.ftp.username }}" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="ftp_password" class="form-label">Mot de passe *</label>
+                        <input type="password" class="form-control" id="ftp_password" name="ftp_password" 
+                               value="{{ config.ftp.password }}" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="ftp_directory" class="form-label">Dossier de destination</label>
+                        <input type="text" class="form-control" id="ftp_directory" name="ftp_directory" 
+                               value="{{ config.ftp.directory }}" placeholder="/uploads">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="ftp_passive" name="ftp_passive" 
+                                   {{ 'checked' if config.ftp.passive_mode }}>
+                            <label class="form-check-label" for="ftp_passive">
+                                Mode passif (recommandé)
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <button type="button" class="btn btn-outline-primary" onclick="testFtpConfig()">
+                        <i class="bi bi-check-circle"></i> Tester la connexion FTP
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-camera"></i> Configuration Appareil Photo
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="camera_auto_detect" name="camera_auto_detect" 
+                                   {{ 'checked' if config.camera.auto_detect }}>
+                            <label class="form-check-label" for="camera_auto_detect">
+                                Détection automatique
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="camera_download_path" class="form-label">Dossier de téléchargement temporaire</label>
+                        <input type="text" class="form-control" id="camera_download_path" name="camera_download_path" 
+                               value="{{ config.camera.download_path }}" placeholder="/tmp/photos">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="camera_delete_after" name="camera_delete_after" 
+                                   {{ 'checked' if config.camera.delete_after_upload }}>
+                            <label class="form-check-label" for="camera_delete_after">
+                                Supprimer les fichiers locaux après upload
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <button type="button" class="btn btn-outline-primary" onclick="testCameraConfig()">
+                        <i class="bi bi-check-circle"></i> Tester la détection
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-gear-fill"></i> Configuration Système
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="system_log_level" class="form-label">Niveau de log</label>
+                                <select class="form-select" id="system_log_level" name="system_log_level">
+                                    <option value="DEBUG" {{ 'selected' if config.system.log_level == 'DEBUG' }}>DEBUG</option>
+                                    <option value="INFO" {{ 'selected' if config.system.log_level == 'INFO' }}>INFO</option>
+                                    <option value="WARNING" {{ 'selected' if config.system.log_level == 'WARNING' }}>WARNING</option>
+                                    <option value="ERROR" {{ 'selected' if config.system.log_level == 'ERROR' }}>ERROR</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="system_check_interval" class="form-label">Intervalle de vérification (secondes)</label>
+                                <input type="number" class="form-control" id="system_check_interval" name="system_check_interval" 
+                                       value="{{ config.system.check_interval }}" min="1" max="3600">
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="system_max_retries" class="form-label">Nombre max de tentatives</label>
+                                <input type="number" class="form-control" id="system_max_retries" name="system_max_retries" 
+                                       value="{{ config.system.max_retries }}" min="1" max="10">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="system_web_host" class="form-label">Adresse d'écoute web</label>
+                                <input type="text" class="form-control" id="system_web_host" name="system_web_host" 
+                                       value="{{ config.system.web_host }}" placeholder="0.0.0.0">
+                                <div class="form-text">0.0.0.0 pour toutes les interfaces, 127.0.0.1 pour local uniquement</div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="system_web_port" class="form-label">Port web</label>
+                                <input type="number" class="form-control" id="system_web_port" name="system_web_port" 
+                                       value="{{ config.system.web_port }}" min="1024" max="65535">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between">
+                <a href="{{ url_for('index') }}" class="btn btn-secondary btn-custom">
+                    <i class="bi bi-arrow-left"></i> Retour
+                </a>
+                <button type="submit" class="btn btn-primary btn-custom">
+                    <i class="bi bi-check-lg"></i> Sauvegarder la configuration
+                </button>
+            </div>
+        </div>
+    </div>
+</form>
+
+<!-- Modal pour les résultats de test -->
+<div class="modal fade" id="testModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="testModalTitle">Test de connexion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="testModalBody">
+                    <div class="text-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Test en cours...</span>
+                        </div>
+                        <p class="mt-2">Test en cours...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function testFtpConfig() {
+    const modal = new bootstrap.Modal(document.getElementById('testModal'));
+    document.getElementById('testModalTitle').textContent = 'Test de connexion FTP';
+    document.getElementById('testModalBody').innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Test en cours...</span>
+            </div>
+            <p class="mt-2">Test de la connexion FTP en cours...</p>
+        </div>
+    `;
+    modal.show();
+    
+    // Créer un objet FormData avec les valeurs actuelles du formulaire
+    const formData = new FormData();
+    formData.append('ftp_server', document.getElementById('ftp_server').value);
+    formData.append('ftp_port', document.getElementById('ftp_port').value);
+    formData.append('ftp_username', document.getElementById('ftp_username').value);
+    formData.append('ftp_password', document.getElementById('ftp_password').value);
+    formData.append('ftp_directory', document.getElementById('ftp_directory').value);
+    formData.append('ftp_passive', document.getElementById('ftp_passive').checked ? 'on' : 'off');
+    
+    // Sauvegarder temporairement la config et tester
+    fetch('/save_config', {
+        method: 'POST',
+        body: formData
+    })
+    .then(() => {
+        return fetch('/test_ftp');
+    })
+    .then(response => response.json())
+    .then(data => {
+        const alertClass = data.status ? 'alert-success' : 'alert-danger';
+        const icon = data.status ? 'bi-check-circle' : 'bi-x-circle';
+        
+        document.getElementById('testModalBody').innerHTML = `
+            <div class="alert ${alertClass}">
+                <i class="bi ${icon}"></i> ${data.message}
+            </div>
+        `;
+    })
+    .catch(error => {
+        document.getElementById('testModalBody').innerHTML = `
+            <div class="alert alert-danger">
+                <i class="bi bi-x-circle"></i> Erreur de communication: ${error.message}
+            </div>
+        `;
+    });
+}
+
+function testCameraConfig() {
+    const modal = new bootstrap.Modal(document.getElementById('testModal'));
+    document.getElementById('testModalTitle').textContent = 'Test de détection de l\'appareil photo';
+    document.getElementById('testModalBody').innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Test en cours...</span>
+            </div>
+            <p class="mt-2">Détection de l'appareil photo en cours...</p>
+        </div>
+    `;
+    modal.show();
+    
+    fetch('/test_camera')
+        .then(response => response.json())
+        .then(data => {
+            const alertClass = data.status ? 'alert-success' : 'alert-danger';
+            const icon = data.status ? 'bi-check-circle' : 'bi-x-circle';
+            
+            document.getElementById('testModalBody').innerHTML = `
+                <div class="alert ${alertClass}">
+                    <i class="bi ${icon}"></i> ${data.message}
+                </div>
+            `;
+        })
+        .catch(error => {
+            document.getElementById('testModalBody').innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="bi bi-x-circle"></i> Erreur de communication: ${error.message}
+                </div>
+            `;
+        });
+}
+
+// Validation du formulaire
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(e) {
+        const server = document.getElementById('ftp_server').value.trim();
+        const username = document.getElementById('ftp_username').value.trim();
+        const password = document.getElementById('ftp_password').value.trim();
+        
+        if (!server || !username || !password) {
+            e.preventDefault();
+            alert('Veuillez remplir tous les champs obligatoires (serveur, nom d\'utilisateur, mot de passe)');
+        }
+    });
+});
+</script>
+{% endblock %}
