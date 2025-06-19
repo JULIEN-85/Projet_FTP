@@ -1,190 +1,128 @@
-# Photo Transfer System - Version Économique
+# Système de transfert de photos simplifié
 
-🔋 **Système optimisé pour Raspberry Pi avec consommation d'énergie minimale**
+Ce projet est une version allégée du système de transfert automatique de photos depuis un Raspberry Pi vers un serveur FTP/SFTP.
 
-Transfert automatique de photos d'un appareil photo/téléphone vers serveur FTP.
+## Fonctionnalités principales
 
-## 🚀 Installation Rapide
+- Transfert automatique de photos vers FTP ou SFTP
+- Interface web simple pour la configuration et l'utilisation
+- Support des protocoles FTP et SFTP (si paramiko est installé)
+- Configuration facile via interface web
+- Gestion robuste des erreurs
+
+## Installation
+
+### Prérequis
+
+- Python 3.6 ou supérieur
+- pip (gestionnaire de paquets Python)
+
+### Installation rapide
+
+1. Cloner le dépôt:
+   ```bash
+   git clone https://github.com/votre-compte/projet-ftp.git
+   cd projet-ftp/Projet_FTP
+   ```
+
+2. Exécuter le script d'installation simplifié:
+   ```bash
+   python3 simple_setup.py
+   ```
+
+3. Démarrer l'application:
+   ```bash
+   python3 simple_webui.py
+   ```
+
+4. Accéder à l'interface web:
+   - Ouvrir un navigateur et aller à `http://adresse-du-raspberry:8080`
+
+### Installation comme service système
+
+Pour que l'application démarre automatiquement au démarrage:
 
 ```bash
-# Cloner et installer
-git clone https://github.com/JULIEN-85/Projet_FTP.git
-cd Projet_FTP
-chmod +x install_minimal.sh
-./install_minimal.sh
-
-# Redémarrer
-sudo reboot
-
-# Activer et démarrer
-sudo systemctl enable photo-ftp photo-ftp-web
-sudo systemctl start photo-ftp photo-ftp-web
+sudo bash install_service.sh
+sudo systemctl start photo-ftp-web.service
 ```
 
-## ⚙️ Configuration
-
-1. **Interface web** : http://[IP_DU_PI]:8080
-2. **Configurer FTP** : Serveur, identifiants, dossier
-3. **Connecter appareil** : USB (mode PTP pour téléphones)
-4. **Démarrer** : Bouton Start dans l'interface
-
-## 📱 Support Matériel
-
-### Appareils Photo
-- Canon, Nikon, Sony (compatibles gPhoto2)
-- Connexion USB directe
-
-### Téléphones Android
-- Mode PTP activé
-- Options développeur → Débogage USB
-- Samsung, Google Pixel, OnePlus recommandés
-
-## 🔧 Commandes Utiles
-
-```bash
-make help          # Aide
-make status        # État des services  
-make logs          # Voir les logs
-make start/stop    # Contrôle services
-make test          # Tests rapides
-make info          # Infos système
-```
-
-## 🔋 Optimisations Énergétiques
-
-### Automatiques
-- **Mode veille** après 5 min d'inactivité
-- **Fréquence CPU** adaptative selon la charge
-- **Mémoire GPU** réduite (64MB)
-- **Garbage collection** optimisé
-- **Services** avec priorité basse
+## Utilisation
 
 ### Configuration
-- **Check interval** : 10s (vs 5s standard)
-- **Timeout FTP** : 30s optimisé
-- **Queue limitée** : 10 photos max en mémoire
-- **Logs** rotation automatique
 
-### Mesures Optionnelles
-```bash
-# Désactiver WiFi (si Ethernet utilisé)
-echo "dtoverlay=disable-wifi" | sudo tee -a /boot/config.txt
+1. Accéder à l'interface web
+2. Aller dans "Configuration"
+3. Remplir les paramètres FTP/SFTP:
+   - Serveur (nom d'hôte ou IP)
+   - Port (21 pour FTP, 22 ou 2222 pour SFTP)
+   - Nom d'utilisateur et mot de passe
+   - Répertoire distant
+4. Configurer les paramètres de la caméra:
+   - Répertoire local de téléchargement des photos
+   - Options de suppression automatique
+5. Enregistrer la configuration
 
-# Désactiver Bluetooth
-echo "dtoverlay=disable-bt" | sudo tee -a /boot/config.txt
+### Vérification de la connexion
 
-# Gouverneur CPU économique
-echo 'GOVERNOR="powersave"' | sudo tee /etc/default/cpufrequtils
-```
+1. Aller dans "État"
+2. Cliquer sur "Tester la connexion" pour vérifier les paramètres
 
-## 📊 Monitoring
+### Démarrer le service
 
-### Interface Web
-- Statistiques temps réel
-- Température CPU
-- Usage mémoire
-- Mode d'alimentation
+1. Aller dans "État"
+2. Cliquer sur "Démarrer le service"
 
-### Ligne de commande
-```bash
-# Température
-vcgencmd measure_temp
+### Upload manuel
 
-# Fréquence CPU
-vcgencmd measure_clock arm
+1. Aller dans "Upload manuel"
+2. Sélectionner un fichier image
+3. Cliquer sur "Uploader"
 
-# Mémoire
-free -h
+## Structure des fichiers
 
-# État services
-make status
-```
+- `simple_webui.py`: Interface web simplifiée 
+- `simple_main.py`: Application principale allégée
+- `simple_transfer.py`: Module de transfert FTP/SFTP unifié
+- `config_util.py`: Gestion de la configuration
+- `config.json`: Fichier de configuration
+- `logs/`: Répertoire des journaux
+- `templates/`: Modèles pour l'interface web
 
-## 🔍 Dépannage
+## Aide et dépannage
 
-### Appareil non détecté
-```bash
-# Test gPhoto2
-gphoto2 --auto-detect
+### Problèmes courants
 
-# Permissions
-sudo usermod -a -G plugdev pi
-sudo reboot
-```
+1. **Erreur de connexion FTP/SFTP**
+   - Vérifier les paramètres de connexion
+   - S'assurer que le serveur est accessible
+   - Vérifier que le nom d'utilisateur et le mot de passe sont corrects
 
-### Interface web inaccessible
-```bash
-# Vérifier service
-systemctl status photo-ftp-web
+2. **Problème de permissions**
+   - Vérifier que le répertoire local existe et est accessible en écriture
+   - Vérifier que le répertoire distant existe et est accessible en écriture
 
-# Redémarrer
-sudo systemctl restart photo-ftp-web
-```
+3. **Photos non transférées**
+   - Vérifier le chemin du répertoire local
+   - Vérifier que les photos sont dans un format pris en charge (.jpg, .jpeg, .png, .raw)
 
-### Consommation élevée
-```bash
-# Vérifier température
-vcgencmd measure_temp
+### Logs
 
-# Mode économique forcé
-sudo cpufreq-set -g powersave
+Les fichiers de journaux se trouvent dans le répertoire `logs/`:
+- `photo_transfer.log`: Journal du service de transfert
+- `webui.log`: Journal de l'interface web
 
-# Logs pour debug
-make logs
-```
+## Personnalisation
 
-## 📋 Configuration Type
+Le projet est conçu pour être simple et facile à modifier:
 
-```json
-{
-    "ftp": {
-        "server": "votre-nas.local",
-        "port": 21,
-        "username": "photo_user",
-        "password": "mot_de_passe",
-        "directory": "/photos",
-        "passive_mode": true,
-        "timeout": 30
-    },
-    "camera": {
-        "auto_detect": true,
-        "download_path": "photos",
-        "delete_after_upload": true
-    },
-    "system": {
-        "log_level": "INFO",
-        "check_interval": 10,
-        "max_retries": 3,
-        "idle_threshold": 300,
-        "enable_power_management": true,
-        "max_concurrent_transfers": 2
-    }
-}
-```
+1. Modifier les templates dans le répertoire `templates/`
+2. Ajouter des fonctionnalités à `simple_main.py` ou `simple_webui.py`
+3. Adapter la configuration dans `config.json`
 
-## 🎯 Performances
+## Économie d'énergie
 
-### Consommation Typique
-- **Idle** : ~2W (mode veille)
-- **Transfert** : ~4W (activité)
-- **Température** : <60°C en continu
-
-### Autonomie Estimée
-- **Batterie 10000mAh** : ~15h en activité, ~25h en veille
-- **Pi 4** : Optimisé pour fonctionnement 24/7
-- **Pi 5** : Performance supérieure avec même consommation
-
-## ⚠️ Remarques Importantes
-
-- **Toujours utiliser un bon câble USB** pour appareils photo
-- **Garder le téléphone déverrouillé** pendant transfert
-- **Surveiller la température** en été
-- **Nettoyer les logs** régulièrement (`make clean`)
-
-## 📄 Licence
-
-MIT License - Utilisation libre pour projets personnels et commerciaux.
-
----
-
-**Système optimisé pour un fonctionnement 24/7 avec consommation minimale ! 🔋**
+Cette version simplifiée est optimisée pour une faible consommation d'énergie sur Raspberry Pi:
+- Utilisation minimale des ressources
+- Intervalles de vérification configurables
+- Fermeture propre des connexions inutilisées

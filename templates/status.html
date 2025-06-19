@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+
+{% block title %}État - Transfert Photos{% endblock %}
+
+{% block content %}
+<div class="grid grid-2">
+    <!-- État de la connexion -->
+    <div class="card">
+        <div class="card-header">
+            <h3><span class="icon-server"></span> Connexion au serveur</h3>
+        </div>
+        <div class="card-body">
+            {% if connected %}
+                <div class="status-indicator status-success">
+                    <span class="status-dot"></span>
+                    Connecté au serveur {{ config.ftp.server }}
+                </div>
+            {% else %}
+                <div class="status-indicator status-error">
+                    <span class="status-dot"></span>
+                    Non connecté
+                </div>
+            {% endif %}
+            
+            {% if message %}
+                <p class="text-muted mt-2 mb-2">{{ message }}</p>
+            {% endif %}
+            
+            <div class="mt-3">
+                <a href="/test" class="btn btn-primary">
+                    <span class="icon-check"></span>
+                    Tester la connexion
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- État du service -->
+    <div class="card">
+        <div class="card-header">
+            <h3><span class="icon-status"></span> Service de transfert</h3>
+        </div>
+        <div class="card-body">
+            {% if running %}
+                <div class="status-indicator status-success">
+                    <span class="status-dot"></span>
+                    Le service est actif
+                </div>
+                <div class="mt-3">
+                    <a href="/stop" class="btn btn-warning">
+                        <span class="icon-warning"></span>
+                        Arrêter le service
+                    </a>
+                </div>
+            {% else %}
+                <div class="status-indicator status-error">
+                    <span class="status-dot"></span>
+                    Le service est inactif
+                </div>
+                <div class="mt-3">
+                    <a href="/start" class="btn btn-success">
+                        <span class="icon-check"></span>
+                        Démarrer le service
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Configuration actuelle -->
+<div class="card">
+    <div class="card-header">
+        <h3><span class="icon-config"></span> Configuration actuelle</h3>
+    </div>
+    <div class="card-body">
+        <div class="grid grid-2">
+            <div>
+                <h4 class="mb-2">Serveur FTP/SFTP</h4>
+                <p class="text-muted mb-1"><strong>Serveur:</strong> {{ config.ftp.server }}:{{ config.ftp.port }}</p>
+                <p class="text-muted mb-1"><strong>Utilisateur:</strong> {{ config.ftp.username }}</p>
+                <p class="text-muted mb-1"><strong>Répertoire distant:</strong> {{ config.ftp.directory }}</p>
+                <p class="text-muted mb-1"><strong>Mode passif:</strong> {{ 'Oui' if config.ftp.passive_mode else 'Non' }}</p>
+            </div>
+            <div>
+                <h4 class="mb-2">Configuration locale</h4>
+                <p class="text-muted mb-1"><strong>Répertoire local:</strong> {{ config.camera.download_path }}</p>
+                <p class="text-muted mb-1"><strong>Détection auto:</strong> {{ 'Oui' if config.camera.auto_detect else 'Non' }}</p>
+                <p class="text-muted mb-1"><strong>Supprimer après upload:</strong> {{ 'Oui' if config.camera.delete_after_upload else 'Non' }}</p>
+                <p class="text-muted mb-1"><strong>Intervalle de vérification:</strong> {{ config.system.check_interval }}s</p>
+            </div>
+        </div>
+        
+        <div class="text-center mt-3">
+            <a href="/config" class="btn btn-primary">
+                <span class="icon-config"></span>
+                Modifier la configuration
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Statistiques et activité récente -->
+<div class="grid grid-2">
+    {% if stats %}
+    <div class="card">
+        <div class="card-header">
+            <h3><span class="icon-info"></span> Statistiques</h3>
+        </div>
+        <div class="card-body">
+            <div class="grid grid-2">
+                <div class="text-center">
+                    <div class="stat-number" style="font-size: 1.5rem; color: var(--primary-color);">{{ stats.total_transfers or 0 }}</div>
+                    <div class="stat-label">Transferts totaux</div>
+                </div>
+                <div class="text-center">
+                    <div class="stat-number" style="font-size: 1.5rem; color: var(--success-color);">{{ stats.success_rate or '0%' }}</div>
+                    <div class="stat-label">Taux de réussite</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="card">
+        <div class="card-header">
+            <h3><span class="icon-folder"></span> Dossier local</h3>
+        </div>
+        <div class="card-body">
+            {% if local_photos_count is defined %}
+                <p class="text-muted mb-2">{{ local_photos_count }} photo(s) en attente dans le dossier local</p>
+            {% endif %}
+            
+            {% if last_scan %}
+                <p class="text-muted mb-2">Dernière vérification: {{ last_scan }}</p>
+            {% endif %}
+            
+            <div class="mt-3">
+                <a href="/upload" class="btn btn-light">
+                    <span class="icon-upload"></span>
+                    Upload manuel
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-refresh de la page toutes les 30 secondes
+setTimeout(function() {
+    window.location.reload();
+}, 30000);
+</script>
+{% endblock %}

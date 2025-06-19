@@ -1,292 +1,102 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 
-{% block title %}Accueil - Photo Transfer System{% endblock %}
+{% block title %}Accueil - Transfert Photos{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-12">
-        <h1 class="mb-4">
-            <i class="bi bi-camera"></i> Système de Transfert de Photos
-        </h1>
+<div class="grid grid-3 stats-grid">
+    <div class="stat-card">
+        <span class="stat-number">{{ stats.total_photos or 0 }}</span>
+        <span class="stat-label">Photos transférées</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-number">{{ stats.success_rate or '0%' }}</span>
+        <span class="stat-label">Taux de réussite</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-number">{{ 'Actif' if service_status else 'Arrêté' }}</span>
+        <span class="stat-label">Service</span>
     </div>
 </div>
 
-<div class="row mb-4">
-    <div class="col-md-3">
-        <div class="card card-stats h-100">
-            <div class="card-body text-center">
-                <i class="bi bi-images" style="font-size: 2rem;"></i>
-                <h3 class="mt-2">{{ status.photos_transferred }}</h3>
-                <p class="mb-0">Photos transférées</p>
-            </div>
+<div class="grid grid-2">
+    <div class="card">
+        <div class="card-header">
+            <h3><span class="icon-server"></span> État de la connexion</h3>
         </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card card-stats h-100">
-            <div class="card-body text-center">
-                <i class="bi bi-exclamation-triangle" style="font-size: 2rem;"></i>
-                <h3 class="mt-2">{{ status.errors }}</h3>
-                <p class="mb-0">Erreurs</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card card-stats h-100">
-            <div class="card-body text-center">
-                <i class="bi bi-list-ul" style="font-size: 2rem;"></i>
-                <h3 class="mt-2">{{ status.queue_size }}</h3>
-                <p class="mb-0">En attente</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card h-100">
-            <div class="card-body text-center">
-                <div class="d-flex align-items-center justify-content-center mb-2">
-                    <span class="status-indicator {{ 'status-ok' if status.status == 'Running' else 'status-error' if status.status == 'FTP Error' else 'status-warning' }}"></span>
-                    <strong>{{ status.status }}</strong>
-                </div>
-                <div class="btn-group" role="group">
-                    <button type="button" class="btn btn-success btn-sm" onclick="startService()">
-                        <i class="bi bi-play"></i> Start
-                    </button>
-                    <button type="button" class="btn btn-danger btn-sm" onclick="stopService()">
-                        <i class="bi bi-stop"></i> Stop
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row mb-4">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">
-                    <i class="bi bi-camera"></i> État de l'appareil photo
-                </h5>
-                <button class="btn btn-outline-primary btn-sm" onclick="testCamera()">
-                    <i class="bi bi-arrow-clockwise"></i> Tester
-                </button>
-            </div>
-            <div class="card-body">
-                <div class="d-flex align-items-center">
-                    <span class="status-indicator {{ 'status-ok' if camera_status else 'status-error' }}"></span>
-                    <span id="camera-status">{{ camera_msg }}</span>
-                </div>
-                {% if camera_status %}
-                    <small class="text-muted">Appareil photo connecté et prêt</small>
+        <div class="card-body">
+            <div class="status-indicator status-{{ connection_status or 'warning' }}">
+                <span class="status-dot"></span>
+                {% if connection_status == 'success' %}
+                    Connexion au serveur réussie
+                {% elif connection_status == 'error' %}
+                    Impossible de se connecter au serveur
                 {% else %}
-                    <small class="text-danger">Vérifiez la connexion USB et gPhoto2</small>
+                    Cliquez sur "Configurer" pour commencer
                 {% endif %}
             </div>
+            
+            {% if config and config.ftp and config.ftp.server %}
+                <p class="text-muted mb-0 mt-2">
+                    Serveur: {{ config.ftp.server }}:{{ config.ftp.port }}<br>
+                    Utilisateur: {{ config.ftp.username }}
+                </p>
+            {% endif %}
         </div>
     </div>
-    
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">
-                    <i class="bi bi-cloud-upload"></i> Connexion FTP
-                </h5>
-                <button class="btn btn-outline-primary btn-sm" onclick="testFtp()">
-                    <i class="bi bi-arrow-clockwise"></i> Tester
-                </button>
-            </div>
-            <div class="card-body">
-                <div class="d-flex align-items-center">
-                    <span class="status-indicator {{ 'status-ok' if ftp_status else 'status-error' }}"></span>
-                    <span id="ftp-status">{{ ftp_msg }}</span>
-                </div>
-                {% if ftp_status %}
-                    <small class="text-muted">Serveur: {{ config.ftp.server }}:{{ config.ftp.port }}</small>
-                {% else %}
-                    <small class="text-danger">Vérifiez la configuration FTP</small>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-</div>
 
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-info-circle"></i> Informations détaillées
-                </h5>
+    <div class="card">
+        <div class="card-header">
+            <h3><span class="icon-folder"></span> Dossier local</h3>
+        </div>
+        <div class="card-body">
+            <div class="status-indicator status-{{ local_status or 'warning' }}">
+                <span class="status-dot"></span>
+                {{ config.camera.download_path if config and config.camera else '/tmp/photos' }}
             </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <strong>Dernière photo transférée:</strong><br>
-                        <span class="text-muted">{{ status.last_photo or 'Aucune' }}</span>
-                    </div>
-                    <div class="col-md-6">
-                        <strong>Dernier transfert:</strong><br>
-                        <span class="text-muted">
-                            {% if status.last_transfer_time %}
-                                {{ status.last_transfer_time }}
-                            {% else %}
-                                Jamais
-                            {% endif %}
-                        </span>
-                    </div>
-                </div>
-                <hr>
-                <div class="row">
-                    <div class="col-md-6">
-                        <strong>Dossier de téléchargement:</strong><br>
-                        <code>{{ config.camera.download_path }}</code>
-                    </div>
-                    <div class="col-md-6">
-                        <strong>Serveur FTP:</strong><br>
-                        <code>{{ config.ftp.server }}{{ config.ftp.directory }}</code>
-                    </div>
-                </div>
-            </div>
+            
+            {% if photos_count %}
+                <p class="text-muted mb-0 mt-2">
+                    {{ photos_count }} photo(s) en attente
+                </p>
+            {% endif %}
         </div>
     </div>
 </div>
 
-<div class="row">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">
-                    <i class="bi bi-file-text"></i> Logs récents
-                </h5>
-                <a href="{{ url_for('logs_page') }}" class="btn btn-outline-primary btn-sm">
-                    Voir tous les logs
-                </a>
-            </div>
-            <div class="card-body">
-                <div class="log-container p-3" id="recent-logs">
-                    <div class="text-center text-muted">
-                        Chargement des logs...
-                    </div>
-                </div>
-            </div>
+<div class="card">
+    <div class="card-header">
+        <h3><span class="icon-upload"></span> Actions rapides</h3>
+    </div>
+    <div class="card-body">
+        <div class="grid grid-3">
+            <a href="/status" class="btn btn-primary">
+                <span class="icon-status"></span>
+                Voir l'état
+            </a>
+            
+            <a href="/config" class="btn btn-success">
+                <span class="icon-config"></span>
+                Configurer
+            </a>
+            
+            <a href="/upload" class="btn btn-light">
+                <span class="icon-upload"></span>
+                Upload manuel
+            </a>
         </div>
     </div>
 </div>
-{% endblock %}
 
-{% block scripts %}
-<script>
-function testCamera() {
-    const statusElement = document.getElementById('camera-status');
-    statusElement.innerHTML = '<i class="bi bi-arrow-clockwise spin"></i> Test en cours...';
-    
-    fetch('/test_camera')
-        .then(response => response.json())
-        .then(data => {
-            statusElement.textContent = data.message;
-            statusElement.previousElementSibling.className = 
-                'status-indicator ' + (data.status ? 'status-ok' : 'status-error');
-        })
-        .catch(error => {
-            statusElement.textContent = 'Erreur de test';
-            statusElement.previousElementSibling.className = 'status-indicator status-error';
-        });
-}
-
-function testFtp() {
-    const statusElement = document.getElementById('ftp-status');
-    statusElement.innerHTML = '<i class="bi bi-arrow-clockwise spin"></i> Test en cours...';
-    
-    fetch('/test_ftp')
-        .then(response => response.json())
-        .then(data => {
-            statusElement.textContent = data.message;
-            statusElement.previousElementSibling.className = 
-                'status-indicator ' + (data.status ? 'status-ok' : 'status-error');
-        })
-        .catch(error => {
-            statusElement.textContent = 'Erreur de test';
-            statusElement.previousElementSibling.className = 'status-indicator status-error';
-        });
-}
-
-function startService() {
-    fetch('/start_service')
-        .then(response => response.json())
-        .then(data => {
-            if (data.status) {
-                location.reload();
-            } else {
-                alert('Erreur: ' + data.message);
-            }
-        })
-        .catch(error => {
-            alert('Erreur de communication');
-        });
-}
-
-function stopService() {
-    fetch('/stop_service')
-        .then(response => response.json())
-        .then(data => {
-            if (data.status) {
-                location.reload();
-            } else {
-                alert('Erreur: ' + data.message);
-            }
-        })
-        .catch(error => {
-            alert('Erreur de communication');
-        });
-}
-
-function updateStatus() {
-    fetch('/status')
-        .then(response => response.json())
-        .then(data => {
-            // Mettre à jour les statistiques si nécessaire
-            // Cette fonction peut être appelée périodiquement
-        })
-        .catch(error => {
-            console.error('Erreur de mise à jour du statut:', error);
-        });
-}
-
-function loadRecentLogs() {
-    fetch('/logs_api?max_lines=10')
-        .then(response => response.json())
-        .then(data => {
-            const logsContainer = document.getElementById('recent-logs');
-            if (data.logs && data.logs.length > 0) {
-                logsContainer.innerHTML = data.logs.join('<br>');
-            } else {
-                logsContainer.innerHTML = '<div class="text-center text-muted">Aucun log disponible</div>';
-            }
-        })
-        .catch(error => {
-            document.getElementById('recent-logs').innerHTML = 
-                '<div class="text-center text-danger">Erreur de chargement des logs</div>';
-        });
-}
-
-// Charger les logs récents au chargement de la page
-document.addEventListener('DOMContentLoaded', function() {
-    loadRecentLogs();
-    
-    // Mettre à jour le statut toutes les 5 secondes
-    setInterval(updateStatus, 5000);
-});
-
-// Animation pour les icônes de rotation
-const style = document.createElement('style');
-style.textContent = `
-    .spin {
-        animation: spin 1s linear infinite;
-    }
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-`;
-document.head.appendChild(style);
-</script>
+<div class="card">
+    <div class="card-header">
+        <h3><span class="icon-info"></span> Comment utiliser</h3>
+    </div>
+    <div class="card-body">
+        <ol style="margin: 0; padding-left: 1.5rem;">
+            <li><strong>Configurez</strong> vos paramètres FTP/SFTP dans l'onglet Configuration</li>
+            <li><strong>Testez</strong> la connexion dans l'onglet État</li>
+            <li><strong>Démarrez</strong> le service automatique ou utilisez l'upload manuel</li>
+        </ol>
+    </div>
+</div>
 {% endblock %}
