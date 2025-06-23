@@ -348,7 +348,7 @@ class SimpleFTPService:
                 'gphoto2', 
                 '--get-all-files',
                 '--skip-existing', 
-                '--filename', os.path.join(download_path, '%f')
+                '--filename', os.path.join(download_path, '%C')
             ], capture_output=True, text=True, timeout=120)
             
             # Compter les nouveaux fichiers

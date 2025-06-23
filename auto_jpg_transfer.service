@@ -1,0 +1,16 @@
+[Unit]
+Description=Surveillance automatique et transfert FTP des fichiers JPG
+After=network.target
+
+[Service]
+Type=simple
+User=server01
+WorkingDirectory=/home/server01/projet_ftp/Projet_FTP
+ExecStart=/usr/bin/python3 /home/server01/projet_ftp/Projet_FTP/auto_jpg_transfer.py
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

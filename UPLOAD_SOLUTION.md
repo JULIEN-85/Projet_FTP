@@ -133,3 +133,5 @@ tail -f logs/photo_transfer.log
 **L'upload de photos fonctionne maintenant parfaitement !**
 
 Le système est robuste, avec fallbacks automatiques et logging détaillé. Prêt pour l'utilisation immédiate en mode développement, et facilement configurable pour la production.
+
+ExecStart=/home/server01/projet_ftp/Projet_FTP/venv/bin/python simple_webui.py
