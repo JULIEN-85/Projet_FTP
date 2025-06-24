@@ -10,6 +10,7 @@ import logging
 import re
 import socket
 from typing import Optional, Dict, Any
+import subprocess
 
 # Import SFTP avec gestion d'erreur
 try:
@@ -103,7 +104,8 @@ class SimpleTransfer:
             # Pour FTPS, établir la connexion sécurisée
             if use_ftps:
                 self.connection.auth()  # Authentification SSL
-                self.connection.prot_p()  # Protection des données
+                # IMPORTANT: Ne pas activer prot_p() car cela cause des fichiers vides (erreur TLS)
+                # self.connection.prot_p()  # Protection des données - DÉSACTIVÉ pour éviter les 0 octets
             
             # Login
             self.connection.login(
@@ -321,7 +323,11 @@ class SimpleTransfer:
                 if not self.connect():
                     continue
                 
-        # Toutes les stratégies ont échoué
+        # Toutes les stratégies ont échoué, essayer curl comme fallback final
+        self.logger.warning(f"Échec d'upload avec {self.protocol.upper()}, tentative avec curl...")
+        if self.upload_file_with_curl(local_path, remote_filename):
+            return True
+        
         self.logger.error(f"Échec d'upload après toutes les tentatives: {remote_filename}")
         self.disconnect()
         return False
@@ -505,6 +511,67 @@ class SimpleTransfer:
         except Exception as e:
             self.logger.error(f"Erreur backup local: {e}")
             return False
+    
+    def upload_file_with_curl(self, local_path: str, remote_filename: Optional[str] = None) -> bool:
+        """Méthode de fallback utilisant curl pour FTPS fiable"""
+        if not os.path.exists(local_path):
+            self.logger.error(f"Fichier local non trouvé: {local_path}")
+            return False
+        
+        if not remote_filename:
+            remote_filename = os.path.basename(local_path)
+        
+        file_size = os.path.getsize(local_path)
+        self.logger.info(f"📤 Upload curl de {remote_filename} ({file_size} octets)")
+        
+        try:
+            # Vérifier que curl est disponible
+            subprocess.run(['curl', '--version'], capture_output=True, check=True)
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            self.logger.error("curl n'est pas installé")
+            return False
+        
+        # Construire l'URL FTP
+        ftp_config = self.config.get('ftp', {})
+        server = ftp_config.get('server', 'localhost')
+        username = ftp_config.get('username', '')
+        password = ftp_config.get('password', '')
+        directory = ftp_config.get('directory', '')
+        use_ftps = ftp_config.get('use_ftps', False)
+        
+        # URL complète
+        url = f"ftp://{username}:{password}@{server}{directory}/{remote_filename}"
+        
+        # Commande curl
+        cmd = ['curl', '-T', local_path]
+        
+        if use_ftps:
+            cmd.extend(['-k', '--ftp-ssl-reqd'])  # FTPS requis, ignorer certificats
+        
+        cmd.append(url)
+        
+        try:
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=300  # 5 minutes pour les gros fichiers
+            )
+            
+            if result.returncode == 0:
+                self.logger.info(f"✅ Upload curl réussi: {remote_filename}")
+                return True
+            else:
+                self.logger.error(f"❌ Erreur curl ({result.returncode}): {result.stderr}")
+                return False
+                
+        except subprocess.TimeoutExpired:
+            self.logger.error(f"❌ Timeout curl pour {remote_filename}")
+            return False
+        except Exception as e:
+            self.logger.error(f"❌ Erreur curl: {e}")
+            return False
+
 def create_transfer(config: Dict[str, Any]) -> SimpleTransfer:
     """Factory function pour créer une instance SimpleTransfer"""
     return SimpleTransfer(config)

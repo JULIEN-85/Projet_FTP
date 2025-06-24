@@ -74,15 +74,16 @@ for FILE in "${FILES[@]}"; do
     # Créer un fichier temporaire de commandes lftp
     LFTP_CMDS=$(mktemp)
     cat > "$LFTP_CMDS" << EOF
-# Désactiver les vérifications SSL pour contourner les problèmes TLS
-set ssl:verify-certificate no
-set ssl:check-hostname no
-
-# Debug
-debug 3
+# Configuration FTPS optimisée pour éviter les fichiers vides
+set ftp:ssl-force true
+set ftp:ssl-protect-data false
+set ssl:verify-certificate false
+set ssl:check-hostname false
+set net:timeout 60
+set net:max-retries 2
 
 # Se connecter au serveur
-open -u "$FTP_USER","$FTP_PASS" "ftp://$FTP_HOST"
+open -u "$FTP_USER","$FTP_PASS" "$FTP_HOST"
 
 # Créer le répertoire distant s'il n'existe pas
 mkdir -p "$FTP_DIR"
@@ -104,17 +105,32 @@ EOF
     # Supprimer le fichier temporaire
     rm -f "$LFTP_CMDS"
 
-    # Vérifier le résultat
-    if [ $RESULT -eq 0 ]; then
-        echo "✅ Fichier $FILENAME transféré avec succès sous le nom $FTP_FILENAME"
+    # Si lftp échoue, essayer avec curl comme fallback
+    if [ $RESULT -ne 0 ]; then
+        echo "⚠️ lftp a échoué, tentative avec curl..."
         
+        # Construire l'URL pour curl
+        CURL_URL="ftp://$FTP_USER:$FTP_PASS@$FTP_HOST$FTP_DIR/$FTP_FILENAME"
+        
+        # Utiliser curl avec FTPS
+        curl -k --ftp-ssl-reqd -T "$FILE" "$CURL_URL"
+        RESULT=$?
+        
+        if [ $RESULT -eq 0 ]; then
+            echo "✅ Fichier $FILENAME transféré avec succès via curl (fallback) sous le nom $FTP_FILENAME"
+        else
+            echo "❌ Échec du transfert de $FILENAME même avec curl"
+        fi
+    else
+        echo "✅ Fichier $FILENAME transféré avec succès via lftp sous le nom $FTP_FILENAME"
+    fi
+    # Vérifier le résultat final et nettoyer si nécessaire
+    if [ $RESULT -eq 0 ]; then
         # Supprimer le fichier local si demandé
         if [ "$DELETE_AFTER" = true ]; then
             rm -f "$FILE"
             echo "  Fichier local supprimé: $FILENAME"
         fi
-    else
-        echo "❌ Échec du transfert de $FILENAME"
     fi
 done
 

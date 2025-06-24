@@ -113,12 +113,30 @@ def status():
     # Obtenir la configuration
     config = photo_service.config
     
+    # Compter les photos locales en attente
+    local_photos_count = 0
+    local_path = config.get('camera', {}).get('download_path', '/tmp/photos')
+    if os.path.exists(local_path):
+        try:
+            photo_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.raw', '.nef', '.cr2']
+            local_photos_count = len([f for f in os.listdir(local_path) 
+                                   if os.path.isfile(os.path.join(local_path, f)) and
+                                   any(f.lower().endswith(ext) for ext in photo_extensions)])
+        except Exception as e:
+            logger.error(f"Erreur lors du comptage des photos: {e}")
+    
+    # Obtenir la date de dernière vérification
+    last_scan = None
+    # On pourrait récupérer cette information depuis un fichier de statut si nécessaire
+    
     return render_template(
         'status.html', 
         connected=is_connected,
         message=message,
         config=config,
-        running=photo_service.running
+        running=photo_service.running,
+        local_photos_count=local_photos_count,
+        last_scan=last_scan
     )
 
 @app.route('/config', methods=['GET', 'POST'])
@@ -316,6 +334,48 @@ def upload():
         else:
             flash(f"Erreur: {str(e)}", "danger")
             return render_template('upload.html', config=photo_service.config)
+
+@app.route('/purge_photos')
+def purge_photos():
+    """Purge tous les fichiers dans le dossier de photos local"""
+    global photo_service
+    
+    photo_service = get_photo_service()
+    
+    # Obtenir le chemin du dossier de téléchargement depuis la configuration
+    local_path = photo_service.config.get('camera', {}).get('download_path', '/tmp/photos')
+    
+    try:
+        # Vérifier si le dossier existe
+        if not os.path.exists(local_path):
+            flash(f"Dossier {local_path} introuvable", "warning")
+            return redirect(url_for('status'))
+        
+        # Compter les fichiers avant suppression
+        count_before = len([f for f in os.listdir(local_path) if os.path.isfile(os.path.join(local_path, f))])
+        
+        # Supprimer tous les fichiers (pas les dossiers)
+        files_deleted = 0
+        for filename in os.listdir(local_path):
+            file_path = os.path.join(local_path, filename)
+            if os.path.isfile(file_path):
+                try:
+                    os.unlink(file_path)
+                    files_deleted += 1
+                except Exception as e:
+                    logger.error(f"Erreur lors de la suppression de {file_path}: {e}")
+        
+        # Log l'action
+        logger.info(f"Purge effectuée: {files_deleted} fichiers supprimés de {local_path}")
+        
+        # Notifier l'utilisateur
+        flash(f"{files_deleted} fichier(s) supprimé(s) du dossier {local_path}", "success")
+        
+    except Exception as e:
+        logger.error(f"Erreur lors de la purge des photos: {e}")
+        flash(f"Erreur lors de la purge des photos: {e}", "danger")
+    
+    return redirect(url_for('status'))
 
 # Point d'entrée
 if __name__ == '__main__':

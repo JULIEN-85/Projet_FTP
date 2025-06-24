@@ -348,7 +348,7 @@ class SimpleFTPService:
                 'gphoto2', 
                 '--get-all-files',
                 '--skip-existing', 
-                '--filename', os.path.join(download_path, '%C')
+                '--filename', os.path.join(download_path, '%f')  # %f inclut l'extension du fichier
             ], capture_output=True, text=True, timeout=120)
             
             # Compter les nouveaux fichiers
@@ -356,8 +356,27 @@ class SimpleFTPService:
             new_files = files_after - files_before
             
             if download_result.returncode == 0 or new_files:
-                photos_downloaded = [os.path.join(download_path, f) for f in new_files 
-                                   if any(f.lower().endswith(ext) for ext in ['.jpg', '.jpeg', '.nef', '.raw', '.cr2'])]
+                # Vérifier l'extension ET les fichiers sans extension mais qui sont des images
+                photos_downloaded = []
+                for f in new_files:
+                    file_path = os.path.join(download_path, f)
+                    # Vérifier par extension
+                    if any(f.lower().endswith(ext) for ext in ['.jpg', '.jpeg', '.nef', '.raw', '.cr2']):
+                        photos_downloaded.append(file_path)
+                    # Vérifier les fichiers sans extension en analysant les premiers octets
+                    elif os.path.isfile(file_path) and os.path.getsize(file_path) > 100:
+                        try:
+                            with open(file_path, 'rb') as img_file:
+                                header = img_file.read(10)
+                                # En-tête JPEG: FF D8 FF
+                                if header[0:3] == b'\xff\xd8\xff':
+                                    # Ajouter l'extension .jpg aux fichiers JPEG sans extension
+                                    new_path = file_path + '.jpg'
+                                    os.rename(file_path, new_path)
+                                    photos_downloaded.append(new_path)
+                                    logger.info(f"Fichier JPEG détecté et renommé: {f} -> {f}.jpg")
+                        except Exception as e:
+                            logger.warning(f"Erreur lors de la vérification du fichier {f}: {e}")
                 
                 if photos_downloaded:
                     logger.info(f"Photos téléchargées avec succès: {len(photos_downloaded)}")

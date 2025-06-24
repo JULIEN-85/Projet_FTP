@@ -1,0 +1,17 @@
+[Unit]
+Description=Service de transfert Caméra → FTP robuste
+After=network.target
+
+[Service]
+Type=simple
+User=server01
+Group=server01
+WorkingDirectory=/home/server01/projet_ftp/Projet_FTP
+ExecStart=/usr/bin/python3 /home/server01/projet_ftp/Projet_FTP/robust_camera_transfer.py
+Restart=on-failure
+RestartSec=30
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
